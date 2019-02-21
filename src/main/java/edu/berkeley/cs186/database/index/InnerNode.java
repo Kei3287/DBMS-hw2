@@ -11,6 +11,8 @@ import edu.berkeley.cs186.database.databox.Type;
 import edu.berkeley.cs186.database.io.Page;
 import edu.berkeley.cs186.database.table.RecordId;
 
+import javax.xml.crypto.Data;
+
 /**
  * A inner node of a B+ tree. Every inner node in a B+ tree of order d stores
  * between d and 2d keys. An inner node with n keys stores n + 1 "pointers" to
@@ -68,20 +70,53 @@ class InnerNode extends BPlusNode {
     // See BPlusNode.get.
     @Override
     public LeafNode get(BaseTransaction transaction, DataBox key) {
-        throw new UnsupportedOperationException("TODO(hw2): implement");
+        int index  = numLessThanEqual(key, keys);
+        return getChild(transaction, index).get(transaction, key);
     }
 
     // See BPlusNode.getLeftmostLeaf.
     @Override
     public LeafNode getLeftmostLeaf(BaseTransaction transaction) {
-        throw new UnsupportedOperationException("TODO(hw2): implement");
+        return getChild(transaction, 0).getLeftmostLeaf(transaction);
+    }
+
+    @Override
+    public LeafNode getRightmostLeaf(BaseTransaction transaction) {
+        return getChild(transaction, keys.size()).getRightmostLeaf(transaction);
     }
 
     // See BPlusNode.put.
     @Override
     public Optional<Pair<DataBox, Integer>> put(BaseTransaction transaction, DataBox key, RecordId rid)
     throws BPlusTreeException {
-        throw new UnsupportedOperationException("TODO(hw2): implement");
+
+        int index  = numLessThanEqual(key, keys);
+        Optional<Pair<DataBox, Integer>> pair = getChild(transaction, index).put(transaction, key, rid);
+        if (!pair.isPresent()) {
+            return Optional.empty();
+        } else if (keys.size() + 1 <= 2 * metadata.getOrder()) {
+            int i = numLessThanEqual(pair.get().getFirst(), keys);
+            keys.add(i, pair.get().getFirst());
+            children.add(i + 1, pair.get().getSecond());
+            sync(transaction);
+            return Optional.empty();
+        } else {
+            int i = numLessThanEqual(pair.get().getFirst(), keys);
+            keys.add(i, pair.get().getFirst());
+            children.add(i + 1, pair.get().getSecond());
+            // split the inner node
+            int order = metadata.getOrder();
+            DataBox k = keys.get(order);
+            List<DataBox> rightKeys = new ArrayList<>(keys);
+            List<Integer> rightChildren = new ArrayList<>(children);
+            rightKeys.subList(0, order + 1).clear();
+            rightChildren.subList(0, order + 1).clear();
+            keys.subList(order, keys.size()).clear();
+            children.subList(order + 1, children.size()).clear();
+            InnerNode newNode = new InnerNode(metadata, rightKeys, rightChildren, transaction);
+            sync(transaction);
+            return Optional.of(new Pair(k, newNode.getPage().getPageNum()));
+        }
     }
 
     // See BPlusNode.bulkLoad.
@@ -90,13 +125,46 @@ class InnerNode extends BPlusNode {
             Iterator<Pair<DataBox, RecordId>> data,
             float fillFactor)
     throws BPlusTreeException {
-        throw new UnsupportedOperationException("TODO(hw2): implement");
+            Optional<Pair<DataBox, Integer>> pair = Optional.empty();
+            while (!pair.isPresent() && data.hasNext()) {
+                int index = keys.size();
+//            Optional<Pair<DataBox, Integer>> pair = getChild(transaction, index).bulkLoad(transaction, data, fillFactor);
+                pair = getRightmostLeaf(transaction).bulkLoad(transaction, data, fillFactor);
+                if (!pair.isPresent()) {
+                    // do nothing
+                } else if (keys.size() + 1 <= 2 * metadata.getOrder()) {
+                    int i = numLessThanEqual(pair.get().getFirst(), keys);
+                    keys.add(i, pair.get().getFirst());
+                    children.add(i + 1, pair.get().getSecond());
+                    sync(transaction);
+                    pair = Optional.empty();
+                } else {
+                    int i = numLessThanEqual(pair.get().getFirst(), keys);
+                    keys.add(i, pair.get().getFirst());
+                    children.add(i + 1, pair.get().getSecond());
+                    // split the inner node
+                    int order = this.metadata.getOrder();
+                    DataBox k = keys.get(order);
+                    List<DataBox> rightKeys = new ArrayList<>(keys);
+                    List<Integer> rightChildren = new ArrayList<>(children);
+                    rightKeys.subList(0, order + 1).clear();
+                    rightChildren.subList(0, order + 1).clear();
+                    keys.subList(order, keys.size()).clear();
+                    children.subList(order + 1, children.size()).clear();
+                    InnerNode newNode = new InnerNode(metadata, rightKeys, rightChildren, transaction);
+                    sync(transaction);
+                    pair = Optional.of(new Pair(k, newNode.getPage().getPageNum()));
+                }
+            }
+            return pair;
     }
 
     // See BPlusNode.remove.
     @Override
     public void remove(BaseTransaction transaction, DataBox key) {
-        throw new UnsupportedOperationException("TODO(hw2): implement");
+        keys.remove(key);
+        get(transaction, key).remove(transaction, key);
+        sync(transaction);
     }
 
     // Helpers ///////////////////////////////////////////////////////////////////

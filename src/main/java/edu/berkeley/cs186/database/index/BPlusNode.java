@@ -51,6 +51,8 @@ abstract class BPlusNode {
      */
     public abstract LeafNode getLeftmostLeaf(BaseTransaction transaction);
 
+    public abstract LeafNode getRightmostLeaf(BaseTransaction transaction);
+
     /**
      * n.put(k, r) inserts the pair (k, r) into the subtree rooted by n. There
      * are two cases to consider:
@@ -161,6 +163,9 @@ abstract class BPlusNode {
             float fillFactor)
     throws BPlusTreeException;
 
+//    public abstract Optional<Pair<DataBox, Integer>> bulkLoadHelper(BaseTransaction transaction,
+//            Iterator<Pair<DataBox, RecordId>> data, float fillFactor)
+//            throws BPlusTreeException;
     /**
      * n.remove(k) removes the key k and its corresponding record id from the
      * subtree rooted by n, or does nothing if the key k is not in the subtree.

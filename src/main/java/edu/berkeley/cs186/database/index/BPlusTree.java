@@ -18,6 +18,9 @@ import edu.berkeley.cs186.database.io.Page;
 import edu.berkeley.cs186.database.io.PageAllocator;
 import edu.berkeley.cs186.database.table.RecordId;
 
+import javax.swing.text.html.Option;
+import javax.xml.crypto.Data;
+
 /**
  * A persistent B+ tree.
  *
@@ -168,7 +171,11 @@ public class BPlusTree implements Closeable {
      */
     public Optional<RecordId> get(BaseTransaction transaction, DataBox key) {
         typecheck(key);
-        throw new UnsupportedOperationException("TODO(hw2): implement");
+//        throw new UnsupportedOperationException("TODO(hw2): implement");
+        if (root instanceof LeafNode) {
+            return ((LeafNode) root).getKey(key);
+        }
+        return root.get(transaction, key).getKey(key);
     }
 
     /**
@@ -262,7 +269,18 @@ public class BPlusTree implements Closeable {
      */
     public void put(BaseTransaction transaction, DataBox key, RecordId rid) throws BPlusTreeException {
         typecheck(key);
-        throw new UnsupportedOperationException("TODO(hw2): implement");
+        Optional<Pair<DataBox, Integer>> pair = root.put(transaction, key, rid);
+        if (pair.isPresent()) {
+            List<DataBox> keys = new ArrayList<>();
+            List<Integer> children = new ArrayList<>();
+            keys.add(pair.get().getFirst());
+            children.add(root.getPage().getPageNum());
+            children.add(pair.get().getSecond());
+            InnerNode newNode = new InnerNode(metadata, keys, children, transaction);
+            root = newNode;
+            writeHeader(transaction, headerPage);
+        }
+//        throw new UnsupportedOperationException("TODO(hw2): implement");
     }
 
     /**
@@ -282,8 +300,24 @@ public class BPlusTree implements Closeable {
      */
     public void bulkLoad(BaseTransaction transaction, Iterator<Pair<DataBox, RecordId>> data,
                          float fillFactor) throws BPlusTreeException {
-        throw new UnsupportedOperationException("TODO(hw2): implement");
+//        throw new UnsupportedOperationException("TODO(hw2): implement");
+        Optional<Pair<DataBox, Integer>> pair = Optional.empty();
+
+        while (data.hasNext()) {
+            pair = root.bulkLoad(transaction, data, fillFactor);
+            if (pair.isPresent()) {
+                List<DataBox> keys = new ArrayList<>();
+                List<Integer> children = new ArrayList<>();
+                keys.add(pair.get().getFirst());
+                children.add(root.getPage().getPageNum());
+                children.add(pair.get().getSecond());
+                InnerNode newNode = new InnerNode(metadata, keys, children, transaction);
+                root = newNode;
+                writeHeader(transaction, headerPage);
+            }
+        }
     }
+
 
     /**
      * Deletes a (key, rid) pair from a B+ tree.
@@ -299,7 +333,8 @@ public class BPlusTree implements Closeable {
      */
     public void remove(BaseTransaction transaction, DataBox key) {
         typecheck(key);
-        throw new UnsupportedOperationException("TODO(hw2): implement");
+//        throw new UnsupportedOperationException("TODO(hw2): implement");
+        root.remove(transaction, key);
     }
 
     // Helpers /////////////////////////////////////////////////////////////////
