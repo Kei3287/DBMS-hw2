@@ -128,7 +128,6 @@ class InnerNode extends BPlusNode {
             Optional<Pair<DataBox, Integer>> pair = Optional.empty();
             while (!pair.isPresent() && data.hasNext()) {
                 int index = keys.size();
-//            Optional<Pair<DataBox, Integer>> pair = getChild(transaction, index).bulkLoad(transaction, data, fillFactor);
                 pair = getRightmostLeaf(transaction).bulkLoad(transaction, data, fillFactor);
                 if (!pair.isPresent()) {
                     // do nothing
@@ -162,9 +161,7 @@ class InnerNode extends BPlusNode {
     // See BPlusNode.remove.
     @Override
     public void remove(BaseTransaction transaction, DataBox key) {
-//        keys.remove(key);
         get(transaction, key).remove(transaction, key);
-//        sync(transaction);
     }
 
     // Helpers ///////////////////////////////////////////////////////////////////

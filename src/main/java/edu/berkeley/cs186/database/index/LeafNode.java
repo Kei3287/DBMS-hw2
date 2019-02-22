@@ -280,9 +280,6 @@ class LeafNode extends BPlusNode {
         }
 
         int pageNum = rightSibling.get();
-        if (pageNum == -1) {
-            return Optional.empty();
-        }
         return Optional.of(LeafNode.fromBytes(transaction, metadata, pageNum));
     }
 
@@ -437,7 +434,7 @@ class LeafNode extends BPlusNode {
             keys.add(DataBox.fromBytes(buf, metadata.getKeySchema()));
             rids.add(RecordId.fromBytes(buf));
         }
-        if (n == -1) {
+        if (rightSibling == -1) {
             return new LeafNode(metadata, page.getPageNum(), keys, rids, Optional.empty(),transaction);
         } else {
             return new LeafNode(metadata, page.getPageNum(), keys, rids, Optional.of(rightSibling), transaction);

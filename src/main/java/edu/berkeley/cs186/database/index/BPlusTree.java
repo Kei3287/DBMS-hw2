@@ -219,7 +219,6 @@ public class BPlusTree implements Closeable {
      * memory will receive 0 points.
      */
     public Iterator<RecordId> scanAll(BaseTransaction transaction) {
-        // TODO(hw2): Return a BPlusTreeIterator.
 //        throw new UnsupportedOperationException("TODO(hw2): implement");
         return new BPlusTreeIterator(root.getLeftmostLeaf(transaction), transaction, true);
     }
@@ -266,6 +265,7 @@ public class BPlusTree implements Closeable {
      *   tree.put(key, rid); // BPlusTreeException :(
      */
     public void put(BaseTransaction transaction, DataBox key, RecordId rid) throws BPlusTreeException {
+        //        throw new UnsupportedOperationException("TODO(hw2): implement");
         typecheck(key);
         Optional<Pair<DataBox, Integer>> pair = root.put(transaction, key, rid);
         if (pair.isPresent()) {
@@ -278,7 +278,6 @@ public class BPlusTree implements Closeable {
             root = newNode;
             writeHeader(transaction, headerPage);
         }
-//        throw new UnsupportedOperationException("TODO(hw2): implement");
     }
 
     /**
@@ -299,10 +298,8 @@ public class BPlusTree implements Closeable {
     public void bulkLoad(BaseTransaction transaction, Iterator<Pair<DataBox, RecordId>> data,
                          float fillFactor) throws BPlusTreeException {
 //        throw new UnsupportedOperationException("TODO(hw2): implement");
-        Optional<Pair<DataBox, Integer>> pair = Optional.empty();
-
         while (data.hasNext()) {
-            pair = root.bulkLoad(transaction, data, fillFactor);
+            Optional<Pair<DataBox, Integer>> pair = root.bulkLoad(transaction, data, fillFactor);
             if (pair.isPresent()) {
                 List<DataBox> keys = new ArrayList<>();
                 List<Integer> children = new ArrayList<>();
@@ -432,7 +429,7 @@ public class BPlusTree implements Closeable {
         private Optional<LeafNode> node;
         private BaseTransaction transaction;
         private Iterator<RecordId> itr;
-        private boolean scanAll;
+        private boolean isScanAll;
         private DataBox key;
 
         public BPlusTreeIterator(LeafNode node, BaseTransaction transaction, boolean scanAll) {
@@ -443,7 +440,7 @@ public class BPlusTree implements Closeable {
             } else {
                 this.itr = node.scanGreaterEqual(key);
             }
-            this.scanAll = scanAll;
+            this.isScanAll = scanAll;
         }
 
         public BPlusTreeIterator(LeafNode node, BaseTransaction transaction, boolean scanAll, DataBox key) {
@@ -455,7 +452,7 @@ public class BPlusTree implements Closeable {
                 this.itr = node.scanGreaterEqual(key);
             }
             this.key = key;
-            this.scanAll = scanAll;
+            this.isScanAll = scanAll;
         }
 
         @Override
@@ -477,7 +474,7 @@ public class BPlusTree implements Closeable {
                 return itr.next();
             } else {
                 node = node.get().getRightSibling(transaction);
-                if (scanAll) {
+                if (isScanAll) {
                     itr = node.get().scanAll();
                 } else {
                     itr = node.get().scanGreaterEqual(key);
