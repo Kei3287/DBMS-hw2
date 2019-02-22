@@ -171,10 +171,6 @@ public class BPlusTree implements Closeable {
      */
     public Optional<RecordId> get(BaseTransaction transaction, DataBox key) {
         typecheck(key);
-//        throw new UnsupportedOperationException("TODO(hw2): implement");
-        if (root instanceof LeafNode) {
-            return ((LeafNode) root).getKey(key);
-        }
         return root.get(transaction, key).getKey(key);
     }
 
@@ -224,7 +220,8 @@ public class BPlusTree implements Closeable {
      */
     public Iterator<RecordId> scanAll(BaseTransaction transaction) {
         // TODO(hw2): Return a BPlusTreeIterator.
-        throw new UnsupportedOperationException("TODO(hw2): implement");
+//        throw new UnsupportedOperationException("TODO(hw2): implement");
+        return new BPlusTreeIterator(root.getLeftmostLeaf(transaction), transaction, true);
     }
 
     /**
@@ -253,9 +250,10 @@ public class BPlusTree implements Closeable {
      */
     public Iterator<RecordId> scanGreaterEqual(BaseTransaction transaction, DataBox key) {
         typecheck(key);
-        // TODO(hw2): Return a BPlusTreeIterator.
-        throw new UnsupportedOperationException("TODO(hw2): implement");
+//        throw new UnsupportedOperationException("TODO(hw2): implement");
+        return new BPlusTreeIterator(root.getLeftmostLeaf(transaction), transaction, false, key);
     }
+
 
     /**
      * Inserts a (key, rid) pair into a B+ tree. If the key already exists in
@@ -431,15 +429,61 @@ public class BPlusTree implements Closeable {
     // Iterator ////////////////////////////////////////////////////////////////
     private class BPlusTreeIterator implements Iterator<RecordId> {
         // TODO(hw2): Add whatever fields and constructors you want here.
+        private Optional<LeafNode> node;
+        private BaseTransaction transaction;
+        private Iterator<RecordId> itr;
+        private boolean scanAll;
+        private DataBox key;
+
+        public BPlusTreeIterator(LeafNode node, BaseTransaction transaction, boolean scanAll) {
+            this.node = Optional.of(node);
+            this.transaction = transaction;
+            if (scanAll) {
+                this.itr = node.scanAll();
+            } else {
+                this.itr = node.scanGreaterEqual(key);
+            }
+            this.scanAll = scanAll;
+        }
+
+        public BPlusTreeIterator(LeafNode node, BaseTransaction transaction, boolean scanAll, DataBox key) {
+            this.node = Optional.of(node);
+            this.transaction = transaction;
+            if (scanAll) {
+                this.itr = node.scanAll();
+            } else {
+                this.itr = node.scanGreaterEqual(key);
+            }
+            this.key = key;
+            this.scanAll = scanAll;
+        }
 
         @Override
         public boolean hasNext() {
-            throw new UnsupportedOperationException("TODO(hw2): implement");
+//            throw new UnsupportedOperationException("TODO(hw2): implement");
+            if (itr.hasNext() || node.get().getRightSibling(transaction).isPresent()) {
+                return true;
+            }
+            return false;
         }
 
         @Override
         public RecordId next() {
-            throw new UnsupportedOperationException("TODO(hw2): implement");
+//            throw new UnsupportedOperationException("TODO(hw2): implement");
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            if (itr.hasNext()) {
+                return itr.next();
+            } else {
+                node = node.get().getRightSibling(transaction);
+                if (scanAll) {
+                    itr = node.get().scanAll();
+                } else {
+                    itr = node.get().scanGreaterEqual(key);
+                }
+                return itr.next();
+            }
         }
     }
 }

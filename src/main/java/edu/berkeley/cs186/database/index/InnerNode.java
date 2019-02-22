@@ -162,9 +162,9 @@ class InnerNode extends BPlusNode {
     // See BPlusNode.remove.
     @Override
     public void remove(BaseTransaction transaction, DataBox key) {
-        keys.remove(key);
+//        keys.remove(key);
         get(transaction, key).remove(transaction, key);
-        sync(transaction);
+//        sync(transaction);
     }
 
     // Helpers ///////////////////////////////////////////////////////////////////

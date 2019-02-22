@@ -280,6 +280,9 @@ class LeafNode extends BPlusNode {
         }
 
         int pageNum = rightSibling.get();
+        if (pageNum == -1) {
+            return Optional.empty();
+        }
         return Optional.of(LeafNode.fromBytes(transaction, metadata, pageNum));
     }
 
