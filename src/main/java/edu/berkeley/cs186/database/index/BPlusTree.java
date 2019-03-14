@@ -250,7 +250,7 @@ public class BPlusTree implements Closeable {
     public Iterator<RecordId> scanGreaterEqual(BaseTransaction transaction, DataBox key) {
         typecheck(key);
 //        throw new UnsupportedOperationException("TODO(hw2): implement");
-        return new BPlusTreeIterator(root.getLeftmostLeaf(transaction), transaction, false, key);
+        return new BPlusTreeIterator(root.get(transaction, key), transaction, false, key);
     }
 
 
@@ -474,11 +474,7 @@ public class BPlusTree implements Closeable {
                 return itr.next();
             } else {
                 node = node.get().getRightSibling(transaction);
-                if (isScanAll) {
-                    itr = node.get().scanAll();
-                } else {
-                    itr = node.get().scanGreaterEqual(key);
-                }
+                itr = node.get().scanAll();
                 return itr.next();
             }
         }

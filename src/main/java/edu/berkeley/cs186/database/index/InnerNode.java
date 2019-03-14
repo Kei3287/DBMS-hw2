@@ -127,7 +127,6 @@ class InnerNode extends BPlusNode {
     throws BPlusTreeException {
             Optional<Pair<DataBox, Integer>> pair = Optional.empty();
             while (!pair.isPresent() && data.hasNext()) {
-                int index = keys.size();
                 pair = getRightmostLeaf(transaction).bulkLoad(transaction, data, fillFactor);
                 if (!pair.isPresent()) {
                     // do nothing
